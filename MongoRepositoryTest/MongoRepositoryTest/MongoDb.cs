@@ -25,6 +25,12 @@ namespace MongoRepositoryTest
             Insert<Person>("Teste");
             var entity = GetByName<Person>("Teste");
         }
+        
+        public static IList<T> All<T>() where T : Usuario
+       {
+           var Collection = OpenCollection<T>().FindAll();
+           return Collection.ToList();
+       }
 
         public static T GetByName<T>(string name) where T : MyEntity
         {
