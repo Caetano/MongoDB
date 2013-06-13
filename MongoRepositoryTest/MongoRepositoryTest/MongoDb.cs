@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
+using System.Windows.Forms;
 using MongoDB.Driver;
 using MongoDB.Driver.Builders;
 using MongoRepository;
@@ -15,44 +17,65 @@ namespace MongoRepositoryTest
     }
     public class Person : MyEntity
     {
-
+        public string Telefone { get; set; }
+        public string Sobrenome { get; set; }
     }
 
-    public class MongoDb
+    public class MongoDb<T> where T : Entity
     {
-        public static void Main(string[] args)
-        {
-            Insert<Person>("Teste");
-            var entity = GetByName<Person>("Teste");
-        }
-        
-        public static IList<T> All<T>() where T : Usuario
-       {
-           var Collection = OpenCollection<T>().FindAll();
-           return Collection.ToList();
-       }
 
-        public static T GetByName<T>(string name) where T : MyEntity
+        public object SingleOrDefault(Expression<Func<T, bool>> expression)
         {
-            var query = Query<T>.EQ(e => e.Name, name);
-            var collection = OpenCollection<T>();
-            var entity = collection.FindOne(query);
-            return entity;
+            var result = OpenCollection().Find(Query<T>.Where(expression));
+            return result.Count() == 1 ? result : null;
         }
 
-        public static void Insert<T>(string name) where T : MyEntity, new()
+        public IList<T> Where(Expression<Func<T, bool>> expression)
         {
-            var collection = OpenCollection<T>();
-            collection.Insert(new T { Name = name });
+            return OpenCollection().Find(Query<T>.Where(expression)).ToList();
         }
 
-        public static MongoCollection<T> OpenCollection<T>() where T : MyEntity
+        public T GetById(string Id)
         {
-            var client = new MongoClient("mongodb://localhost");
-            var server = client.GetServer();
-            var database = server.GetDatabase("db");
-            return database.GetCollection<T>(typeof(T).Name);
+            return OpenCollection().FindOne(Query<T>.EQ(e => e.Id, Id));
+        }
+
+        public IList<T> All()
+        {
+            return OpenCollection().FindAll().ToList();
+        }
+
+        public T Insert(T obj)
+        {
+            OpenCollection().Insert(obj);
+            return obj;
+        }
+
+        private static MongoCollection<T> OpenCollection()
+        {
+            return GetDatabase("db").GetCollection<T>(typeof(T).Name);
+        }
+
+        private static MongoDatabase GetDatabase(string database)
+        {
+            return Client().GetServer().GetDatabase(database);
+        }
+
+        private static MongoServer GetServer()
+        {
+            return Client().GetServer();
+        }
+
+        private static MongoClient Client(string connectionString)
+        {
+            return new MongoClient(connectionString);
+        }
+
+        private static MongoClient Client()
+        {
+            return new MongoClient("mongodb://localhost");
         }
 
     }
 }
+
