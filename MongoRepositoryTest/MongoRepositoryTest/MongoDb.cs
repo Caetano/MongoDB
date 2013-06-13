@@ -24,10 +24,10 @@ namespace MongoRepositoryTest
     public class MongoDb<T> where T : Entity
     {
 
-        public object SingleOrDefault(Expression<Func<T, bool>> expression)
+        public T SingleOrDefault(Expression<Func<T, bool>> expression)
         {
             var result = OpenCollection().Find(Query<T>.Where(expression));
-            return result.Count() == 1 ? result : null;
+            return result.SingleOrDefault();
         }
 
         public IList<T> Where(Expression<Func<T, bool>> expression)
